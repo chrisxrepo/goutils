@@ -61,6 +61,14 @@ type ByteBuffer struct {
 }
 
 func (b *ByteBuffer) Len() int {
+	return len(b.data) - b.pos
+}
+
+func (b *ByteBuffer) Cap() int {
+	return cap(b.data)
+}
+
+func (b *ByteBuffer) Used() int {
 	return len(b.data)
 }
 
@@ -101,6 +109,10 @@ func (b *ByteBuffer) WriteTo(w io.Writer) (int64, error) {
 }
 
 func (b *ByteBuffer) Bytes() []byte {
+	return b.data[b.pos:]
+}
+
+func (b *ByteBuffer) Data() []byte {
 	return b.data
 }
 
@@ -227,6 +239,39 @@ func (b *ByteBuffer) ReadBytes(size int) []byte {
 	return v
 }
 
+func (b *ByteBuffer) ReadLine(sp string) []byte {
+	if len(sp) == 0 {
+		sp = "\n"
+	}
+
+	for i := b.pos + len(sp) - 1; i < len(b.data); i++ {
+		hit := true
+		for j := 0; j < len(sp); j++ {
+			if b.data[i-len(sp)+1+j] != sp[j] {
+				hit = false
+				break
+			}
+		}
+
+		if hit {
+			v := b.data[b.pos : i-len(sp)+1]
+			b.pos = i + 1
+			return v
+		}
+	}
+
+	return nil
+}
+
+func (b *ByteBuffer) Drain(l int) {
+	b.pos += l
+	if b.pos < 0 {
+		b.pos = 0
+	} else if b.pos > len(b.data) {
+		b.pos = len(b.data)
+	}
+}
+
 func (b *ByteBuffer) Set(p []byte) {
 	b.data = append(b.data[:0], p...)
 }
@@ -236,11 +281,26 @@ func (b *ByteBuffer) SetString(s string) {
 }
 
 func (b *ByteBuffer) String() string {
-	return string(b.data)
+	return string(b.data[b.pos:])
 }
 
 func (b *ByteBuffer) Reset() {
 	b.data = b.data[:0]
+	b.pos = 0
+}
+
+func (b *ByteBuffer) Compact() {
+	if b.pos == 0 {
+		return
+	}
+
+	if b.pos >= len(b.data) {
+		b.Reset()
+	}
+
+	v := b.data[b.pos:len(b.data)]
+	copy(b.data, v)
+	b.data = b.data[:len(v)]
 	b.pos = 0
 }
 

@@ -52,11 +52,11 @@ func (p *RoutinePool) PushTask(task *Task) {
 	p.waitTaskChan <- task
 }
 
-func (p *RoutinePool) Count() int{
+func (p *RoutinePool) Count() int {
 	return int(p.size)
 }
 
-func (p *RoutinePool) Free() int{
+func (p *RoutinePool) Free() int {
 	return int(p.free)
 }
 

@@ -35,7 +35,7 @@ func TestBufferPool(t *testing.T) {
 
 }
 
-func TestByteBuffer(t *testing.T) {
+func TestByteBuffer_ReadWrite(t *testing.T) {
 	Convey("buffer_pool", t, func() {
 		buf := DefaultBufferPool.Get()
 		buf.WriteUint16(100)
@@ -51,5 +51,32 @@ func TestByteBuffer(t *testing.T) {
 		So(buf.ReadUint64(), ShouldEqual, 30000)
 		So(string(buf.PickBytes(5)), ShouldEqual, "hello")
 		So(string(buf.ReadBytes(5)), ShouldEqual, "hello")
+	})
+}
+
+func TestByteBuffer_ReadLine(t *testing.T) {
+	Convey("buffer_pool", t, func() {
+		buf := DefaultBufferPool.Get()
+		buf.WriteString("Hello World1\r\nHello World2\nHelle World3\r\n")
+		Println(string(buf.ReadLine("\r\n")))
+		Println(string(buf.ReadLine("\n")))
+		Println(string(buf.ReadLine("\r\n")))
+		Println(buf.Len(), buf.Used(), buf.Cap())
+	})
+}
+
+func TestByteBuffer_Compact(t *testing.T) {
+	Convey("buffer_pool", t, func() {
+		buf := DefaultBufferPool.Get()
+		buf.WriteString("Hello World1 Hello World2 Helle World3")
+		Println(buf.String())
+
+		buf.ReadBytes(13)
+		buf.Compact()
+		Println(buf.String())
+
+		buf.ReadBytes(13)
+		buf.Compact()
+		Println(buf.String())
 	})
 }

@@ -36,7 +36,6 @@ func TestNoDelayWork(t *testing.T) {
 	fmt.Println("pool free:", DefaultRoutinePool.Free())
 	time.Sleep(time.Second * 4)
 
-
 	fmt.Println("pool count:", DefaultRoutinePool.Count())
 	fmt.Println("pool free:", DefaultRoutinePool.Free())
 	fmt.Println("count:", count)
