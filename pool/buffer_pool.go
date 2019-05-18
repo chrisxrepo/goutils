@@ -72,35 +72,43 @@ func (b *ByteBuffer) Used() int {
 	return len(b.data)
 }
 
-func (b *ByteBuffer) ReadFrom(r io.Reader) (int64, error) {
-	p := b.data
-	nStart := int64(len(p))
-	nMax := int64(cap(p))
-	n := nStart
-	if nMax == 0 {
-		nMax = 64
-		p = make([]byte, nMax)
-	} else {
-		p = p[:nMax]
-	}
+func (b *ByteBuffer) ReadAll(r io.Reader) (int, error) {
+	var nn int
 	for {
-		if n == nMax {
-			nMax *= 2
-			bNew := make([]byte, nMax)
-			copy(bNew, p)
-			p = bNew
+		if len(b.data) >= cap(b.data) {
+			newData := make([]byte, cap(b.data)*2)
+			copy(newData, b.data)
+			b.data = newData[:len(b.data)]
 		}
-		nn, err := r.Read(p[n:])
-		n += int64(nn)
-		if err != nil {
-			b.data = p[:n]
-			n -= nStart
-			if err == io.EOF {
-				return n, nil
+
+		n, e := r.Read(b.data[len(b.data):cap(b.data)])
+		if n > 0 {
+			b.data = b.data[:len(b.data)+n]
+		}
+
+		nn += n
+		if e != nil {
+			if e == io.EOF {
+				return nn, nil
 			}
-			return n, err
+			return nn, e
 		}
 	}
+}
+
+func (b *ByteBuffer) ReadFrom(r io.Reader) (int, error) {
+	if len(b.data) >= cap(b.data) {
+		newData := make([]byte, cap(b.data)*2)
+		copy(newData, b.data)
+		b.data = newData[:len(b.data)]
+	}
+
+	n, e := r.Read(b.data[len(b.data):cap(b.data)])
+	if n > 0 {
+		b.data = b.data[:len(b.data)+n]
+	}
+
+	return n, e
 }
 
 func (b *ByteBuffer) WriteTo(w io.Writer) (int64, error) {
